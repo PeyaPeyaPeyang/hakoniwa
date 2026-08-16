@@ -16,7 +16,7 @@ public class HakoniwaLayer {
     private final int depth;
     private final List<Policy> policies;
     
-    private /* stable */ int id = 0;
+    private /* stable */ int id;
 
     private HakoniwaLayer(String name) {
         this.parent = null;
@@ -38,6 +38,7 @@ public class HakoniwaLayer {
     }
 
     void setID(int id) {
+        // Since default id is 0, we can use it to check if the id has already been set
         if (this.id != 0) {
             throw new IllegalStateException("ID has already been set");
         }

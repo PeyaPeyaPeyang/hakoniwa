@@ -8,6 +8,7 @@ import jp.yamad.hakoniwa.java.ReferenceType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ServiceLoader;
 
 public class HakoniwaPolicies {
     private final List<Policy> policies;
@@ -20,6 +21,19 @@ public class HakoniwaPolicies {
         this(Arrays.asList(policies));
     }
 
+    public HakoniwaPolicies() {
+        this.policies = new ArrayList<>();
+        this.loadProviders();
+    }
+    
+    private void loadProviders() {
+        PolicyBuilder builder = new PolicyBuilder();
+        for (HakoniwaPolicyProvider provider : ServiceLoader.load(HakoniwaPolicyProvider.class)) {
+            provider.registerPolicies(builder);
+        }
+        this.policies.addAll(builder.build());
+    }
+    
     public List<Policy> getPolicies() {
         return this.policies;
     }

@@ -25,6 +25,14 @@ public class PolicyBuilder {
         return add(Policy.deny(target, operation));
     }
 
+    public PolicyBuilder allowWhen(SecurityTarget target, Operation operation, PolicyCondition condition) {
+        return add(Policy.allowWhen(target, operation, condition));
+    }
+
+    public PolicyBuilder denyWhen(SecurityTarget target, Operation operation, PolicyCondition condition) {
+        return add(Policy.denyWhen(target, operation, condition));
+    }
+
     public List<Policy> build() {
         return new ArrayList<>(this.definitions);
     }

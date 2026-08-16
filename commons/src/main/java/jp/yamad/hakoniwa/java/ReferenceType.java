@@ -5,17 +5,17 @@ import java.util.Objects;
 public class ReferenceType implements JavaType {
     private final String fullName;
 
-    private final String packageNmae;
+    private final String packageName;
     private final String typeName;
 
-    private ReferenceType(String packageNmae, String typeName) {
-        this.fullName = packageNmae.isEmpty() ? typeName : packageNmae + "/" + typeName;
-        this.packageNmae = packageNmae;
+    private ReferenceType(String packageName, String typeName) {
+        this.fullName = packageName.isEmpty() ? typeName : packageName + "/" + typeName;
+        this.packageName = packageName;
         this.typeName = typeName;
     }
 
-    public static ReferenceType of(String packageNmae, String typeName) {
-        return new ReferenceType(packageNmae, typeName);
+    public static ReferenceType of(String packageName, String typeName) {
+        return new ReferenceType(packageName, typeName);
     }
 
     public static ReferenceType ofDescriptor(String desc) {
@@ -57,7 +57,7 @@ public class ReferenceType implements JavaType {
     }
 
     public String getPackageName() {
-        return this.packageNmae;
+        return this.packageName;
     }
 
     public String getTypeName() {
@@ -73,10 +73,9 @@ public class ReferenceType implements JavaType {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ReferenceType)) {
+        if (!(obj instanceof ReferenceType other)) {
             return false;
         }
-        ReferenceType other = (ReferenceType) obj;
         return Objects.equals(this.fullName, other.fullName);
     }
 

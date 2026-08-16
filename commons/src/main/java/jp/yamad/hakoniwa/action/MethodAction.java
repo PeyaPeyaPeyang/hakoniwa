@@ -7,12 +7,18 @@ public abstract class MethodAction extends AbstractAction<MethodAction.MethodOpe
 
     private final ClassMethod performer;
     private final MethodOperation operation;
+    private final Object[] arguments;
 
     public MethodAction(ClassMethod performer, MethodOperation operation) {
+        this(performer, operation, new Object[0]);
+    }
+
+    public MethodAction(ClassMethod performer, MethodOperation operation, Object[] arguments) {
         super(TARGET, operation);
 
         this.performer = performer;
         this.operation = operation;
+        this.arguments = arguments == null ? new Object[0] : arguments.clone();
     }
 
     public ClassMethod getPerformer() {
@@ -23,9 +29,17 @@ public abstract class MethodAction extends AbstractAction<MethodAction.MethodOpe
         return this.operation;
     }
 
+    public Object[] getArguments() {
+        return this.arguments.clone();
+    }
+
     public static class Invocation extends MethodAction {
         public Invocation(ClassMethod performer, MethodOperation operation) {
             super(performer, operation);
+        }
+
+        public Invocation(ClassMethod performer, MethodOperation operation, Object... arguments) {
+            super(performer, operation, arguments);
         }
     }
 

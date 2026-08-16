@@ -117,8 +117,7 @@ public class MethodDescriptor {
             } else if (c == 'L') {
                 // Reference type, find the full descriptor
                 int start = index;
-                do
-                {
+                do {
                     index++;
                 }
                 while (index < length && argsDesc.charAt(index) != ';');
@@ -145,10 +144,9 @@ public class MethodDescriptor {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof MethodDescriptor)) {
+        if (!(obj instanceof MethodDescriptor other)) {
             return false;
         }
-        MethodDescriptor other = (MethodDescriptor) obj;
         return Objects.equals(this.methodName, other.methodName)
                 && Arrays.equals(this.argsTypes, other.argsTypes)
                 && Objects.equals(this.returnType, other.returnType);

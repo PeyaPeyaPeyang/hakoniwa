@@ -16,10 +16,22 @@ public class HakoniwaAccessManager {
     }
 
     public static void checkMethodInvocation(int layerId, String owner, String name, String descriptor) {
+        checkMethodInvocation(layerId, owner, name, descriptor, new Object[0]);
+    }
+
+    public static void checkMethodInvocation(
+            int layerId,
+            String owner,
+            String name,
+            String descriptor,
+            Object[] arguments) {
         HakoniwaLayer layer = LayerRegistry.getLayer(layerId);
         MethodDescriptor method = MethodDescriptor.parse(name + descriptor);
         ClassMethod classMethod = new ClassMethod(ReferenceType.of(owner), method);
-        MethodAction action = new MethodAction.Invocation(classMethod, MethodAction.MethodOperation.INVOKE_INSTANCE);
+        MethodAction action = new MethodAction.Invocation(
+                classMethod,
+                MethodAction.MethodOperation.INVOKE_INSTANCE,
+                arguments);
         check(layer, action);
     }
 
