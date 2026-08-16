@@ -1,5 +1,7 @@
 package jp.yamad.hakoniwa.policy;
 
+import jp.yamad.hakoniwa.action.MethodAction;
+import jp.yamad.hakoniwa.action.SecurityAction;
 import jp.yamad.hakoniwa.java.ClassMethod;
 import jp.yamad.hakoniwa.java.ReferenceType;
 
@@ -22,15 +24,20 @@ public class HakoniwaPolicies {
         return this.policies;
     }
 
-    public Policy[] getPoliciesFor(ClassMethod executor) {
+    public Policy[] getPoliciesFor(SecurityAction<?> action) {
         return this.policies.stream()
-                .filter(policy -> policy.getTarget().matches(executor))
+                .filter(policy -> policy.check(action) != null)
+                .toArray(Policy[]::new);
+    }
+
+    public Policy[] getPoliciesFor(ClassMethod executor) {
+        MethodAction action = new MethodAction.Invocation(executor, MethodAction.MethodOperation.INVOKE_INSTANCE);
+        return this.policies.stream()
+                .filter(policy -> policy.check(action) != null)
                 .toArray(Policy[]::new);
     }
 
     public Policy[] getPoliciesFor(ReferenceType clazz) {
-        return this.policies.stream()
-                .filter(policy -> policy.getTarget().matches(clazz))
-                .toArray(Policy[]::new);
+        return new Policy[0];
     }
 }

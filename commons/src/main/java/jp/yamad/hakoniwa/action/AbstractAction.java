@@ -11,11 +11,11 @@ public abstract class AbstractAction<A extends Operation> implements SecurityAct
 
     @Override
     public SecurityTarget getTarget() {
-        return target;
+        return this.target;
     }
 
     @Override
     public A getOperation() {
-        return operation;
+        return this.operation;
     }
 }

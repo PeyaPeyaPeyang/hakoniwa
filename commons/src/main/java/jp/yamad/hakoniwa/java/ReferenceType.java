@@ -1,8 +1,8 @@
 package jp.yamad.hakoniwa.java;
 
-public class ReferenceType implements JavaType {
-    public static final Integer
+import java.util.Objects;
 
+public class ReferenceType implements JavaType {
     private final String fullName;
 
     private final String packageNmae;
@@ -49,12 +49,7 @@ public class ReferenceType implements JavaType {
 
     @Override
     public String getTypeDescriptor() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < this.arrayDimentions; i++) {
-            sb.append("[");
-        }
-        sb.append("L").append(this.fullName).append(";");
-        return sb.toString();
+        return "L" + this.fullName + ";";
     }
 
     public String getFullName() {
@@ -67,5 +62,26 @@ public class ReferenceType implements JavaType {
 
     public String getTypeName() {
         return this.typeName;
+    }
+
+    public String getClassName() {
+        return this.typeName;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ReferenceType)) {
+            return false;
+        }
+        ReferenceType other = (ReferenceType) obj;
+        return Objects.equals(this.fullName, other.fullName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.fullName);
     }
 }

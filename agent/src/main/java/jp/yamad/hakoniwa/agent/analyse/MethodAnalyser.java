@@ -1,10 +1,10 @@
 package jp.yamad.hakoniwa.agent.analyse;
 
-import jp.yamad.hakoniwa.action.ActionModel;
+import jp.yamad.hakoniwa.action.InvocationTrap;
+import jp.yamad.hakoniwa.action.InvocationTrapRegistry;
 import jp.yamad.hakoniwa.java.ClassMethod;
 import jp.yamad.hakoniwa.java.MethodDescriptor;
 import jp.yamad.hakoniwa.java.ReferenceType;
-import jp.yamad.hakoniwa.policy.HakoniwaPolicies;
 import org.objectweb.asm.tree.*;
 
 import java.util.ArrayList;
@@ -15,20 +15,34 @@ import java.util.List;
  * It uses an InvocationActionMatcher to match method invocations to security actions.
  */
 public class MethodAnalyser {
-    private final HakoniwaPolicies poliices;
+    private final int layerId;
     private final InvocationActionMatcher matcher;
 
-    public MethodAnalyser(HakoniwaPolicies policies, InvocationActionMatcher matcher) {
-        this.poliices = policies;
+    public MethodAnalyser(int layerId, InvocationActionMatcher matcher) {
+        this.layerId = layerId;
         this.matcher = matcher;
     }
 
+    public MethodAnalyser(int layerId, InvocationTrapRegistry registry) {
+        this(layerId, (instructionOwner, invokedMethod) -> registry.get(invokedMethod));
+    }
+
+    public boolean transformClass(ClassNode node) {
+        MethodAnalysis[] analyses = this.analyseClass(node);
+        for (MethodAnalysis analysis : analyses) {
+            if (analysis.getTraps().length > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public MethodAnalysis[] analyseClass(ClassNode node) {
-        ReferenceType clazz = ReferenceType.parse(node.name);
+        ReferenceType clazz = ReferenceType.of(node.name);
         MethodAnalysis[] behaviours = new MethodAnalysis[node.methods.size()];
         for (int i = 0; i < node.methods.size(); i++) {
             MethodNode methodNode = node.methods.get(i);
-            behaviours[i] = analyse(clazz, methodNode);
+            behaviours[i] = this.analyse(clazz, methodNode);
         }
 
         return behaviours;
@@ -39,47 +53,41 @@ public class MethodAnalyser {
         // so we need to combine them to create a MethodDescriptor.
         MethodDescriptor desc = MethodDescriptor.parse(node.name + node.desc);
         if (node.instructions == null || node.instructions.size() == 0) {
-            return new MethodAnalysis(desc, new ActionModel<?>[0]);
+            return new MethodAnalysis(desc, new InvocationTrap<?>[0]);
         } else {
-            ClassMethod classMethod = new ClassMethod(owner, desc);
-
-            List<InsnNode> insnList = node.instructions.toArray();
-            ActionModel<?>[] actions = analyseActions(owner, insnList);
-            return new MethodAnalysis(desc, actions);
+            InvocationTrap<?>[] traps = this.analyseActions(new ClassMethod(owner, desc), node.instructions);
+            return new MethodAnalysis(desc, traps);
         }
     }
 
-    private ActionModel<?>[] analyseActions(ReferenceType owner, InsnList insns) {
-        ClassMethod instructionOwner = new ClassMethod(owner, desc);
-        List<ActionModel<?>> actions = new ArrayList<>();
-        for (InsnNode insn : new ArrayList<>(insns)) {
+    private InvocationTrap<?>[] analyseActions(ClassMethod instructionOwner, InsnList insns) {
+        List<InvocationTrap<?>> traps = new ArrayList<>();
+        for (AbstractInsnNode insn : insns.toArray()) {
             if (insn instanceof MethodInsnNode) {
-                ActionModel<?> action = analyseMethodInvocation(instructionOwner, (MethodInsnNode) insn, insns);
-                if (action != null) {
-                    actions.add(action);
+                InvocationTrap<?> trap = this.analyseMethodInvocation(instructionOwner, (MethodInsnNode) insn, insns);
+                if (trap != null) {
+                    traps.add(trap);
                 }
             }
         }
 
-        return actions.toArray(new ActionModel<?>[0]);
+        return traps.toArray(new InvocationTrap<?>[0]);
     }
 
-    private ActionModel<?> analyseMethodInvocation(ClassMethod instructionOwner, MethodInsnNode node, InsnList insns) {
+    private InvocationTrap<?> analyseMethodInvocation(ClassMethod instructionOwner, MethodInsnNode node, InsnList insns) {
         MethodDescriptor desc = MethodDescriptor.parse(node.name + node.desc);
-        ClassMethod method = new ClassMethod(ReferenceType.parse(node.owner), desc);
-        Policy[] policies = poliices.getPoliciesFor(method);
-        if (policies.length == 0) {
-            return null;
-        }
-
-        ActionModel<?> model = matcher.apply(node.owner, desc);
-        if (action != null) {
-            if (action.getBeforeInvocation() != null) {
-                insns.insertBefore(node, action.getBeforeInvocation());
+        ClassMethod method = new ClassMethod(ReferenceType.of(node.owner), desc);
+        InvocationTrap<?> trap = this.matcher.apply(instructionOwner, method);
+        if (trap != null) {
+            InsnList before = trap.getBeforeInvocation(this.layerId, method);
+            if (before != null && before.size() > 0) {
+                insns.insertBefore(node, before);
             }
-            if (action.getAfterInvocation() != null) {
-                insns.insert(node, action.getAfterInvocation());
+            InsnList after = trap.getAfterInvocation(this.layerId, method);
+            if (after != null && after.size() > 0) {
+                insns.insert(node, after);
             }
         }
+        return trap;
     }
 }

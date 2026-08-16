@@ -1,6 +1,8 @@
 package jp.yamad.hakoniwa.policy;
 
 import jp.yamad.hakoniwa.java.ClassMethod;
+import jp.yamad.hakoniwa.java.JavaType;
+import jp.yamad.hakoniwa.java.ReferenceType;
 
 import java.util.Objects;
 
@@ -29,6 +31,7 @@ import java.util.Objects;
  *   <li>{@code *}</li>
  * </ul>
  */
+@SuppressWarnings("StringEquality")
 public class HakoniwaTarget {
     private static final String WILDCARD = "*";
 
@@ -39,6 +42,21 @@ public class HakoniwaTarget {
     private final String methodName;
     private final String methodParams;
     private final String methodReturnType;
+
+    public HakoniwaTarget(
+            String packageName,
+            String className,
+            String methodName,
+            String methodParams,
+            String methodReturnType) {
+        this(
+                packageName + "/" + className + "->" + methodName,
+                packageName,
+                className,
+                methodName,
+                methodParams,
+                methodReturnType);
+    }
 
     private HakoniwaTarget(
             String pattern,
@@ -56,7 +74,7 @@ public class HakoniwaTarget {
     }
 
     public boolean matches(ClassMethod method) {
-        if (!this.matches(method.getOwner()) {
+        if (!this.matches(method.getOwner())) {
             return false;
         }
 
@@ -73,16 +91,14 @@ public class HakoniwaTarget {
             for (JavaType paramType : parameterTypes) {
                 sb.append(paramType.getDescriptor());
             }
-            if (!this.methodParams.equals(sb.toString())) {
+            if (!this.methodParams.contentEquals(sb)) {
                 return false;
             }
         }
 
         if (this.methodReturnType != WILDCARD) {
             String returnTypeDescriptor = returnType.getDescriptor();
-            if (!this.methodReturnType.equals(returnTypeDescriptor)) {
-                return false;
-            }
+            return this.methodReturnType.equals(returnTypeDescriptor);
         }
 
         return true;
@@ -95,11 +111,6 @@ public class HakoniwaTarget {
         return matches(this.packageName, packageName)
                 && matches(this.className, className);
     }
-
-    private static boolean matches(String expected, String actual) {
-        return expected == WILDCARD || expected.equals(actual);
-    }
-
 
     public static HakoniwaTarget parse(String pattern) {
         Objects.requireNonNull(pattern, "pattern");
@@ -234,27 +245,27 @@ public class HakoniwaTarget {
     }
 
     public String getPattern() {
-        return pattern;
+        return this.pattern;
     }
 
     public String getPackageName() {
-        return packageName;
+        return this.packageName;
     }
 
     public String getClassName() {
-        return className;
+        return this.className;
     }
 
     public String getMethodName() {
-        return methodName;
+        return this.methodName;
     }
 
     public String getMethodParams() {
-        return methodParams;
+        return this.methodParams;
     }
 
     public String getMethodReturnType() {
-        return methodReturnType;
+        return this.methodReturnType;
     }
 
     private static final class Owner {

@@ -1,5 +1,8 @@
 package jp.yamad.hakoniwa.java;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 public class MethodDescriptor {
     private final String raw;
 
@@ -22,6 +25,10 @@ public class MethodDescriptor {
         return this.methodName;
     }
 
+    public String getName() {
+        return this.methodName;
+    }
+
     public JavaType[] getArgsTypes() {
         return this.argsTypes;
     }
@@ -31,8 +38,11 @@ public class MethodDescriptor {
     }
 
     public String getDescriptor() {
+        return this.methodName + getInvocationDescriptor();
+    }
+
+    public String getInvocationDescriptor() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.methodName);
         sb.append('(');
         for (JavaType argType : this.argsTypes) {
             sb.append(argType.getTypeDescriptor());
@@ -42,11 +52,9 @@ public class MethodDescriptor {
         return sb.toString();
     }
 
-    public
-
     /**
      * Parse method descriptor string into MethodDescriptor object.
-     * 
+     * <p>
      * A valid method descriptor string is in the form of:
      * <code>
      *     methodName(Type descriptors of args)returnType
@@ -102,9 +110,6 @@ public class MethodDescriptor {
                 while (argsDesc.charAt(index) == '[') {
                     index++;
                 }
-                if (index >= length) {
-                    throw new IllegalArgumentException("Invalid argument descriptor: " + argsDesc);
-                }
                 // Now index points to the element type
                 JavaType elementType = JavaType.parseDescriptor(argsDesc.substring(start, index + 1));
                 argsList.add(elementType);
@@ -112,10 +117,12 @@ public class MethodDescriptor {
             } else if (c == 'L') {
                 // Reference type, find the full descriptor
                 int start = index;
-                index++; // Move past 'L'
-                while (index < length && argsDesc.charAt(index) != ';') {
+                do
+                {
                     index++;
                 }
+                while (index < length && argsDesc.charAt(index) != ';');
+                
                 if (index >= length || argsDesc.charAt(index) != ';') {
                     throw new IllegalArgumentException("Invalid argument descriptor: " + argsDesc);
                 }
@@ -131,4 +138,26 @@ public class MethodDescriptor {
         }
 
         return argsList.toArray(new JavaType[0]);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof MethodDescriptor)) {
+            return false;
+        }
+        MethodDescriptor other = (MethodDescriptor) obj;
+        return Objects.equals(this.methodName, other.methodName)
+                && Arrays.equals(this.argsTypes, other.argsTypes)
+                && Objects.equals(this.returnType, other.returnType);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(this.methodName, this.returnType);
+        result = 31 * result + Arrays.hashCode(this.argsTypes);
+        return result;
+    }
 }

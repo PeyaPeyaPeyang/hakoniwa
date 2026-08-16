@@ -1,7 +1,9 @@
 package jp.yamad.hakoniwa.action;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
 public abstract class NetworkAction extends IOAction<NetworkAction.NetworkOperation> {
@@ -18,12 +20,20 @@ public abstract class NetworkAction extends IOAction<NetworkAction.NetworkOperat
         return this.address;
     }
 
-    public static abstract class SocketNetworkAction extends NetworkAction {
+    public abstract static class SocketNetworkAction extends NetworkAction {
         private final Socket socket;
 
         protected SocketNetworkAction(NetworkOperation operation, Socket socket) {
-            super(operation, socket.getRemoteSocketAddress());
+            super(operation, remoteAddressOf(socket));
             this.socket = socket;
+        }
+
+        private static InetAddress remoteAddressOf(Socket socket) {
+            SocketAddress address = socket.getRemoteSocketAddress();
+            if (address instanceof InetSocketAddress) {
+                return ((InetSocketAddress) address).getAddress();
+            }
+            return null;
         }
     }
 
@@ -48,7 +58,7 @@ public abstract class NetworkAction extends IOAction<NetworkAction.NetworkOperat
         }
 
         public ByteBuffer getData() {
-            return data;
+            return this.data;
         }
     }
 
@@ -61,7 +71,7 @@ public abstract class NetworkAction extends IOAction<NetworkAction.NetworkOperat
         }
 
         public ByteBuffer getData() {
-            return data;
+            return this.data;
         }
     }
 
@@ -79,7 +89,7 @@ public abstract class NetworkAction extends IOAction<NetworkAction.NetworkOperat
         }
 
         public boolean isCritical() {
-            return critical;
+            return this.critical;
         }
     }
 }

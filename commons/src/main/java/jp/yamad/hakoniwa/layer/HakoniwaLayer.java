@@ -1,22 +1,29 @@
 package jp.yamad.hakoniwa.layer;
 
+import jp.yamad.hakoniwa.action.SecurityAction;
+import jp.yamad.hakoniwa.policy.Policy;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class HakoniwaLayer {
-    public static final ROOT = new HakoniwaLayer(null, "root", LayerAccess.TRUSTED);
+    public static final HakoniwaLayer ROOT = new HakoniwaLayer("root");
 
     private final HakoniwaLayer parent;
     private final String name;
     private final LayerAccess access;
     private final int depth;
+    private final List<Policy> policies;
+    
+    private /* stable */ int id = 0;
 
-    private HakoniwaLayer(HakoniwaLayer parent, String name, LayerAccess access) {
-        if (ROOT != null) {
-            throw new IllegalStateException("Duplicated root creation");
-        }
-
-        this.parent = parent;
+    private HakoniwaLayer(String name) {
+        this.parent = null;
         this.name = name;
-        this.access = access;
+        this.access = LayerAccess.TRUSTED;
         this.depth = 0;
+        this.policies = new ArrayList<>();
     }
 
     public HakoniwaLayer(HakoniwaLayer parent, String name, LayerAccess access) {
@@ -27,6 +34,37 @@ public class HakoniwaLayer {
         this.name = name;
         this.access = access;
         this.depth = parent.depth + 1;
+        this.policies = new ArrayList<>();
+    }
+
+    void setID(int id) {
+        if (this.id != 0) {
+            throw new IllegalStateException("ID has already been set");
+        }
+        this.id = id;
+    }
+    
+    public int getID() {
+        return this.id;
+    }
+    
+    public boolean check(SecurityAction<?> action) {
+        for (Policy policy : this.policies) {
+            Boolean result = policy.check(action);
+            if (result != null) {
+                return result;
+            }
+        }
+
+        return this.access != LayerAccess.RESTRICTED;
+    }
+
+    public void addPolicy(Policy policy) {
+        this.policies.add(policy);
+    }
+
+    public List<Policy> getPolicies() {
+        return Collections.unmodifiableList(this.policies);
     }
 
     public boolean hasAccessTo(HakoniwaLayer other) {
@@ -37,7 +75,7 @@ public class HakoniwaLayer {
                 return this.isHigherThan(other);
             case HORIZONTAL_TRUSTED:
                 return this.isLowerOrEqualThan(other);
-            case RESTRICTED:
+            default:
                 return false;
         }
     }
@@ -48,5 +86,21 @@ public class HakoniwaLayer {
 
     public boolean isLowerOrEqualThan(HakoniwaLayer other) {
         return this.depth >= other.depth;
+    }
+
+    public HakoniwaLayer getParent() {
+        return this.parent;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public LayerAccess getAccess() {
+        return this.access;
+    }
+
+    public int getDepth() {
+        return this.depth;
     }
 }

@@ -4,9 +4,13 @@ public interface JavaType {
     boolean isPrimitive();
     String getTypeDescriptor();
 
+    default String getDescriptor() {
+        return getTypeDescriptor();
+    }
+
     /**
      * Parses a Java type descriptor and returns the corresponding JavaType instance.
-     *
+     ＊<p>
      * A valid descriptor can be:
      * <ul>
      *   <li>{@code Z} for {@code boolean}</li>

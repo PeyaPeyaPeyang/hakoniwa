@@ -2,14 +2,14 @@ package jp.yamad.hakoniwa.action;
 
 import jp.yamad.hakoniwa.java.ClassMethod;
 
-public abstract class MethodAction extends AbstractAction<MethodOperation> {
-    private static final SecurityTarget TARGET = new SecurityTarget(SecurityTarget.ROOT, "method");
+public abstract class MethodAction extends AbstractAction<MethodAction.MethodOperation> {
+    public static final SecurityTarget TARGET = SecurityTarget.METHOD;
 
     private final ClassMethod performer;
     private final MethodOperation operation;
 
     public MethodAction(ClassMethod performer, MethodOperation operation) {
-        super(SecurityTarget.METHOD, operation);
+        super(TARGET, operation);
 
         this.performer = performer;
         this.operation = operation;
@@ -23,13 +23,18 @@ public abstract class MethodAction extends AbstractAction<MethodOperation> {
         return this.operation;
     }
 
+    public static class Invocation extends MethodAction {
+        public Invocation(ClassMethod performer, MethodOperation operation) {
+            super(performer, operation);
+        }
+    }
+
     public enum MethodOperation implements Operation {
         INVOKE_STATIC(true),
         INVOKE_INSTANCE(true),
         NEW_INSTANCE(true),
 
-        OTHER(false)
-        ,
+        OTHER(false),
         ;
 
         private final boolean critical;

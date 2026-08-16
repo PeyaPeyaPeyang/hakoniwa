@@ -36,4 +36,17 @@ public enum PrimitiveType implements JavaType {
         }
         throw new IllegalArgumentException("Unknown primitive type descriptor: " + descriptor);
     }
+
+    public static PrimitiveType fromClass(Class<?> clazz) {
+        if (clazz == boolean.class) return BOOLEAN;
+        if (clazz == byte.class) return BYTE;
+        if (clazz == char.class) return CHAR;
+        if (clazz == short.class) return SHORT;
+        if (clazz == int.class) return INT;
+        if (clazz == long.class) return LONG;
+        if (clazz == float.class) return FLOAT;
+        if (clazz == double.class) return DOUBLE;
+        if (clazz == void.class) return VOID;
+        throw new IllegalArgumentException("Not a primitive class: " + clazz);
+    }
 }

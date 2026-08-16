@@ -3,5 +3,6 @@ rootProject.name = "hakoniwa"
 include(
     "agent",
     "commons",
-    "core-libs"
+    "core-libs",
+    "hakoniwa-example"
 )
