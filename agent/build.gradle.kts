@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.gradleup.shadow") version "9.2.0"
 }
 
 group = "jp.yamad.hakoniwa"
@@ -22,4 +23,28 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Premain-Class" to "jp.yamad.hakoniwa.agent.Hakoniwa",
+            "Agent-Class" to "jp.yamad.hakoniwa.agent.Hakoniwa",
+            "Can-Redefine-Classes" to "true",
+            "Can-Retransform-Classes" to "true"
+        )
+    }
+}
+
+tasks.shadowJar {
+    archiveBaseName.set("hakoniwa-agent")
+    archiveClassifier.set("")
+}
+
+tasks.named("assemble") {
+    dependsOn(tasks.named("shadowJar"))
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }
