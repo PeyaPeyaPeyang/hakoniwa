@@ -3,6 +3,7 @@ package jp.yamad.hakoniwa.agent.analyse;
 import jp.yamad.hakoniwa.action.InvocationTrap;
 import jp.yamad.hakoniwa.action.InvocationTrapRegistry;
 import jp.yamad.hakoniwa.java.ClassMethod;
+import jp.yamad.hakoniwa.java.InvocationType;
 import jp.yamad.hakoniwa.java.MethodDescriptor;
 import jp.yamad.hakoniwa.java.ReferenceType;
 import org.objectweb.asm.tree.*;
@@ -55,16 +56,22 @@ public class MethodAnalyser {
         if (node.instructions == null || node.instructions.size() == 0) {
             return new MethodAnalysis(desc, new InvocationTrap<?>[0]);
         } else {
-            InvocationTrap<?>[] traps = this.analyseActions(new ClassMethod(owner, desc), node.instructions);
+            InvocationTrap<?>[] traps = this.analyseActions(new ClassMethod(owner, desc), node);
             return new MethodAnalysis(desc, traps);
         }
     }
 
-    private InvocationTrap<?>[] analyseActions(ClassMethod instructionOwner, InsnList insns) {
+    private InvocationTrap<?>[] analyseActions(ClassMethod instructionOwner, MethodNode methodNode) {
+        InsnList insns = methodNode.instructions;
         List<InvocationTrap<?>> traps = new ArrayList<>();
         for (AbstractInsnNode insn : insns.toArray()) {
             if (insn instanceof MethodInsnNode) {
-                InvocationTrap<?> trap = this.analyseMethodInvocation(instructionOwner, (MethodInsnNode) insn, insns);
+                InvocationType invocationType = InvocationType.fromOpcode(insn.getOpcode());
+                InvocationTrap<?> trap = this.analyseMethodInvocation(
+                        invocationType,
+                        instructionOwner,
+                        (MethodInsnNode) insn,
+                        methodNode);
                 if (trap != null) {
                     traps.add(trap);
                 }
@@ -74,18 +81,28 @@ public class MethodAnalyser {
         return traps.toArray(new InvocationTrap<?>[0]);
     }
 
-    private InvocationTrap<?> analyseMethodInvocation(ClassMethod instructionOwner, MethodInsnNode node, InsnList insns) {
+    private InvocationTrap<?> analyseMethodInvocation(InvocationType type, 
+                                                      ClassMethod instructionOwner, MethodInsnNode node, MethodNode methodNode) {
+        if (type == InvocationType.INVOKE_SPECIAL && "<init>".equals(node.name)) {
+            return null;
+        }
+
         MethodDescriptor desc = MethodDescriptor.parse(node.name + node.desc);
         ClassMethod method = new ClassMethod(ReferenceType.of(node.owner), desc);
         InvocationTrap<?> trap = this.matcher.apply(instructionOwner, method);
         if (trap != null) {
-            InsnList before = trap.getBeforeInvocation(this.layerId, method);
+            int localBase = methodNode.maxLocals;
+            methodNode.maxLocals = Math.max(
+                    methodNode.maxLocals,
+                    localBase + trap.getRequiredLocalSlots(method));
+
+            InsnList before = trap.getBeforeInvocation(this.layerId, type, method, localBase);
             if (before != null && before.size() > 0) {
-                insns.insertBefore(node, before);
+                methodNode.instructions.insertBefore(node, before);
             }
-            InsnList after = trap.getAfterInvocation(this.layerId, method);
+            InsnList after = trap.getAfterInvocation(this.layerId, type, method);
             if (after != null && after.size() > 0) {
-                insns.insert(node, after);
+                methodNode.instructions.insert(node, after);
             }
         }
         return trap;

@@ -110,10 +110,23 @@ public class MethodDescriptor {
                 while (argsDesc.charAt(index) == '[') {
                     index++;
                 }
-                // Now index points to the element type
-                JavaType elementType = JavaType.parseDescriptor(argsDesc.substring(start, index + 1));
+                if (index >= length) {
+                    throw new IllegalArgumentException("Invalid argument descriptor: " + argsDesc);
+                }
+                if (argsDesc.charAt(index) == 'L') {
+                    do {
+                        index++;
+                    }
+                    while (index < length && argsDesc.charAt(index) != ';');
+                    if (index >= length || argsDesc.charAt(index) != ';') {
+                        throw new IllegalArgumentException("Invalid argument descriptor: " + argsDesc);
+                    }
+                    index++;
+                } else {
+                    index++;
+                }
+                JavaType elementType = JavaType.parseDescriptor(argsDesc.substring(start, index));
                 argsList.add(elementType);
-                index++; // Move past the element type
             } else if (c == 'L') {
                 // Reference type, find the full descriptor
                 int start = index;

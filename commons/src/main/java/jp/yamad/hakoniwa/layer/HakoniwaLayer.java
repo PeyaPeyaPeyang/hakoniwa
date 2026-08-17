@@ -21,7 +21,7 @@ public class HakoniwaLayer {
     private HakoniwaLayer(String name) {
         this.parent = null;
         this.name = name;
-        this.access = LayerAccess.TRUSTED;
+        this.access = LayerAccess.UNTRUSTED;
         this.depth = 0;
         this.policies = new ArrayList<>();
     }

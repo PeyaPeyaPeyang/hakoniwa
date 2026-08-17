@@ -17,7 +17,7 @@ public class PrintlnPolicyProvider implements HakoniwaPolicyProvider {
                     }
                     Object[] arguments = ((MethodAction) action).getArguments();
                     return arguments.length > 0
-                            && String.valueOf(arguments[0]).contains("hakoniwa-deny");
+                            && String.valueOf(arguments[0]).contains("Hello, C#!");
                 });
     }
 }

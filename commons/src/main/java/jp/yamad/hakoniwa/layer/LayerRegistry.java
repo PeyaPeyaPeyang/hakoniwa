@@ -1,5 +1,8 @@
 package jp.yamad.hakoniwa.layer;
 
+import jp.yamad.hakoniwa.policy.HakoniwaPolicies;
+import jp.yamad.hakoniwa.policy.Policy;
+
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -11,11 +14,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class LayerRegistry {
     private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
+    private static final HakoniwaPolicies DEFAULT_POLICIES;
     private static final Map<ClassLoader, HakoniwaLayer> LAYER_BY_CLASS_LOADER;
     private static final Map<HakoniwaLayer, Set<WeakReference<ClassLoader>>> CLASS_LOADERS_BY_LAYER;
     private static final Map<Integer, HakoniwaLayer> LAYER_BY_ID;
 
     static {
+        DEFAULT_POLICIES = new HakoniwaPolicies();
         LAYER_BY_CLASS_LOADER = Collections.synchronizedMap(new WeakHashMap<>());
         CLASS_LOADERS_BY_LAYER = Collections.synchronizedMap(new IdentityHashMap<>());
         LAYER_BY_ID = new ConcurrentHashMap<>();
@@ -49,6 +54,7 @@ public final class LayerRegistry {
             return;
         }
 
+        installDefaultPolicies(layer);
         registerLayer(layer);
         LAYER_BY_CLASS_LOADER.put(loader, layer);
         CLASS_LOADERS_BY_LAYER
@@ -68,5 +74,11 @@ public final class LayerRegistry {
         int id = NEXT_ID.getAndIncrement();
         layer.setID(id);
         LAYER_BY_ID.put(id, layer);
+    }
+
+    private static void installDefaultPolicies(HakoniwaLayer layer) {
+        for (Policy policy : DEFAULT_POLICIES.getPolicies()) {
+            layer.addPolicy(policy);
+        }
     }
 }
